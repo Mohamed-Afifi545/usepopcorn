@@ -55,36 +55,88 @@ const KEY = "85fec0d580aa8a22011668c210c42c7a";
 export default function App() {
   const [movies, setMovies] = useState([]);
   const [watched, setWatched] = useState([]);
+  const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const query = "super";
+  const [error, setError] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
 
-  useEffect(function () {
-    async function fetchMovies() {
-      setIsLoading(true);
-      const res = await fetch(
-        `https://api.themoviedb.org/3/search/movie?&api_key=${KEY}&include_adult=true&language=en-US&query=${query}`
-      );
-      const data = await res.json();
-      setMovies(data.results);
-      console.log(data.results);
-      setIsLoading(false);
-    }
-    fetchMovies();
-  }, []);
+  function handleSelectMovie(id) {
+    setSelectedId((selectedId) => (id === selectedId ? null : id));
+  }
+
+  function handleCloseMovie() {
+    setSelectedId(null);
+  }
+
+  useEffect(
+    function () {
+      async function fetchMovies() {
+        try {
+          setIsLoading(true);
+          setError("");
+          const res = await fetch(
+            `https://api.themoviedb.org/3/search/movie?&api_key=${KEY}&include_adult=true&language=en-US&query=${query}`
+          );
+
+          if (!res.ok)
+            throw new Error("Something went wrong, please try again!");
+          const data = await res.json();
+          if (data.results.length === 0) throw new Error("Movie not found!");
+          setMovies(data.results);
+          console.log(data.results);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+
+      if (query.length < 3) {
+        setMovies([]);
+        setError("");
+        return;
+      }
+
+      fetchMovies();
+    },
+    [query]
+  );
 
   return (
     <>
       <NavBar>
-        <Search />
+        <Search
+          query={query}
+          setQuery={setQuery}
+        />
         <NumResults movies={movies} />
       </NavBar>
       <Main>
-        <Box>{isLoading ? <Loader /> : <MovieList movies={movies} />} </Box>
         <Box>
-          <>
-            <WatchedSummary watched={watched} />
-            <WatchedMovieList watched={watched} />
-          </>
+          {query.length < 3 && (
+            <h2 className="error">
+              Please start searching for an awesome movie...
+            </h2>
+          )}
+          {!isLoading && !error && (
+            <MovieList
+              movies={movies}
+              onSelectMovie={handleSelectMovie}
+              onCloseMovie={handleCloseMovie}
+            />
+          )}
+          {isLoading && <Loader />}
+          {error && <ErrorMessage message={error} />}
+        </Box>
+        <Box>
+          {selectedId ? (
+            <MovieDetails selectedId={selectedId} />
+          ) : (
+            <>
+              <WatchedSummary watched={watched} />
+              <WatchedMovieList watched={watched} />
+            </>
+          )}
         </Box>
       </Main>
     </>
@@ -93,6 +145,14 @@ export default function App() {
 
 function Loader() {
   return <p className="loader">Loading...</p>;
+}
+
+function ErrorMessage({ message }) {
+  return (
+    <p className="error">
+      <span>⚠️</span> {message}
+    </p>
+  );
 }
 
 function NavBar({ children }) {
@@ -113,9 +173,7 @@ function Logo() {
   );
 }
 
-function Search() {
-  const [query, setQuery] = useState("");
-
+function Search({ query, setQuery }) {
   return (
     <input
       className="search"
@@ -155,23 +213,25 @@ function Box({ children }) {
   );
 }
 
-function MovieList({ movies }) {
+function MovieList({ movies, onSelectMovie, onCloseMovie }) {
   return (
-    <ul className="list">
+    <ul className="list list-movies">
       {movies?.map((movie) => (
         <Movie
           movie={movie}
           key={movie.id}
+          onSelectMovie={onSelectMovie}
+          onCloseMovie={onCloseMovie}
         />
       ))}
     </ul>
   );
 }
 
-function Movie({ movie }) {
+function Movie({ movie, onSelectMovie }) {
   const year = movie.release_date.split("-").slice(0, 1).join("");
   return (
-    <li>
+    <li onClick={() => onSelectMovie(movie.id)}>
       <img
         src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
         alt={`${movie.title} poster`}
@@ -184,6 +244,20 @@ function Movie({ movie }) {
         </p>
       </div>
     </li>
+  );
+}
+
+function MovieDetails({ selectedId, onCloseMovie }) {
+  return (
+    <div className="details">
+      <button
+        className="btn-back"
+        onClick={onCloseMovie}
+      >
+        &larr;
+      </button>
+      {selectedId}
+    </div>
   );
 }
 
