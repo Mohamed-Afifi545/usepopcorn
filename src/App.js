@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import StarRating from "./starRating";
 const tempMovieData = [
   {
     imdbID: "tt1375666",
@@ -130,7 +130,10 @@ export default function App() {
         </Box>
         <Box>
           {selectedId ? (
-            <MovieDetails selectedId={selectedId} />
+            <MovieDetails
+              selectedId={selectedId}
+              onCloseMovie={handleCloseMovie}
+            />
           ) : (
             <>
               <WatchedSummary watched={watched} />
@@ -248,15 +251,80 @@ function Movie({ movie, onSelectMovie }) {
 }
 
 function MovieDetails({ selectedId, onCloseMovie }) {
+  const [movie, setMovie] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(
+    function () {
+      async function getMovieDetails() {
+        setIsLoading(true);
+        const options = {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+            Authorization:
+              "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI4NWZlYzBkNTgwYWE4YTIyMDExNjY4YzIxMGM0MmM3YSIsIm5iZiI6MTcyMzI5NzMxMy4yMjc2MTEsInN1YiI6IjY2Yjc2ZDAyNDA5MDFkM2ZjODI2MjM3OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.cVX2UxsUgUFLpbt-6focfb8yj5--O352X3C21ynrdcw",
+          },
+        };
+        const res = await fetch(
+          `https://api.themoviedb.org/3/movie/${selectedId}`,
+          options
+        );
+        const data = await res.json();
+        setMovie(data);
+        setIsLoading(false);
+        console.log(data);
+      }
+      getMovieDetails();
+    },
+    [selectedId]
+  );
+
   return (
     <div className="details">
-      <button
-        className="btn-back"
-        onClick={onCloseMovie}
-      >
-        &larr;
-      </button>
-      {selectedId}
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <>
+          <header>
+            <button
+              className="btn-back"
+              onClick={onCloseMovie}
+            >
+              &larr;
+            </button>
+            <img
+              src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
+              alt={`${movie.title} poster`}
+            />
+            <div className="details-overview">
+              <h2>{movie.title}</h2>
+              <p>
+                {movie.release_date} &bull; {movie.runtime}
+              </p>
+              {movie.genres && movie.genres.length > 0 && (
+                <p>{movie.genres[0].name}</p>
+              )}
+              <p>
+                <span>⭐</span> {movie.vote_average} IMDb rating
+              </p>
+            </div>
+          </header>
+          <section>
+            <div className="rating">
+              <StarRating
+                maxRating={10}
+                size={24}
+              />
+            </div>
+            <p>
+              <em>{movie.overview}</em>
+            </p>
+            <p>Starring:</p>
+            <p>Directed by:</p>
+          </section>
+        </>
+      )}
     </div>
   );
 }
