@@ -50,8 +50,8 @@ body {
 }
 
 .box {
-  width: 42rem;
-  max-width: 42rem;
+  width: 45rem;
+  max-width: 45rem;
   background-color: var(--color-background-500);
   border-radius: 0.9rem;
   overflow: scroll;
@@ -289,6 +289,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2.4rem;
+}
+
+.rating div {
+  justify-content: center;
+  margin: 0 auto;
 }
 
 .btn-add {
