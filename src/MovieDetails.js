@@ -44,7 +44,7 @@ export function MovieDetails({
       countRatingDecisions: countRef.current,
     };
     onAddWatched(newWatchedMovie);
-    // onCloseMovie();
+    onCloseMovie();
   }
 
   useKey("Escape", onCloseMovie);
