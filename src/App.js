@@ -16,8 +16,6 @@ import { WatchedMovieList } from "./WatchedMovieList";
 export const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
-const KEY = "85fec0d580aa8a22011668c210c42c7a";
-
 export default function App() {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(null);
